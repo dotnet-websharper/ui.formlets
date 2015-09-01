@@ -6,7 +6,7 @@
     <Name>WebSharper.UI.Next.Formlets.Tests</Name>
     <OutputType>Library</OutputType>
     <OutputPath>bin</OutputPath>
-    <WebSharperProject>Bundle</WebSharperProject>
+    <WebSharperProject>Website</WebSharperProject>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile />

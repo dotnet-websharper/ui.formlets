@@ -1,14 +1,14 @@
-namespace WebSharper.Piglets.Next.Tests
+namespace WebSharper.UI.Next.Formlets.Tests
 
 open WebSharper
-open WebSharper.JavaScript
 open WebSharper.UI.Next
 open WebSharper.UI.Next.Html
-open WebSharper.UI.Next.Client
-open WebSharper.UI.Next.Formlets
 
 [<JavaScript>]
-module Main =
+module Client =
+    open WebSharper.JavaScript
+    open WebSharper.UI.Next.Client
+    open WebSharper.UI.Next.Formlets
 
     type Country =
         | [<Constant "HU">] HU
@@ -19,7 +19,7 @@ module Main =
         <*> flX
         <*> flY
 
-    let Main =
+    let Main() =
         Console.Log("Running JavaScript Entry Point..")
         let lm =
             ListModel.Create (fst >> fst) [
@@ -52,9 +52,32 @@ module Main =
                 <*> Controls.Select HU [HU, "Hungary"; FR, "France"]
                 |> Formlet.Horizontal)
 //        Formlet.Many f1
-        manyModel
-        |> Formlet.WithSubmit "Submit"
+        Formlet.Do {
+            let! res =
+                manyModel
+                |> Formlet.WithSubmit "Submit"
+            return! Formlet.OfDoc (fun () ->
+                res
+                |> Seq.map (fun (b, c, d) ->
+                    p [text (sprintf "%s %b %A" b c d)]
+                    :> Doc)
+                |> Doc.Concat)
+        }
+        |> Formlet.WithFormContainer
         |> Formlet.RunWithLayout Layout.Table (fun x ->
             Console.Log x
             JS.Window?foo <- x)
-        |> Doc.RunById "main"
+
+module Server =
+    open WebSharper.Sitelets
+    open WebSharper.UI.Next.Server
+
+    type Template = Templating.Template<"index.html">
+
+    [<Website>]
+    let Website =
+        Application.SinglePage (fun ctx ->
+            Content.Doc(
+                Template.Doc(main = [client <@ Client.Main() @>])
+            )
+        )

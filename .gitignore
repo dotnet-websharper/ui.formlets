@@ -6,5 +6,6 @@ packages/
 tools/packages/
 build/
 *.Tests/Content/
+*.Tests/Scripts/
 **/bin/
 **/obj/

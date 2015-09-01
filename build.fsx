@@ -16,7 +16,7 @@ let main =
             ])
 
 let test =
-    bt.WebSharper.BundleWebsite("WebSharper.UI.Next.Formlets.Tests")
+    bt.WebSharper.SiteletWebsite("WebSharper.UI.Next.Formlets.Tests")
         .SourcesFromProject()
         .References(fun r ->
             [

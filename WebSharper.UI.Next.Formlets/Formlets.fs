@@ -14,6 +14,7 @@ type LayoutShape =
     | Varying of View<list<Layout>>
     | Horizontal of list<Layout>
     | Vertical of list<Layout>
+    | Wrap of LayoutShape * (Doc -> Doc)
 
 and [<JavaScript>] Layout =
     {
@@ -45,6 +46,9 @@ and [<JavaScript>] Layout =
             Label = None
         }
 
+    static member Wrap f l =
+        { l with Shape = LayoutShape.Wrap (l.Shape, f) }
+
     static member OfList ls =
         match ls with
         | [l] -> l
@@ -66,7 +70,8 @@ and [<JavaScript>] Layout =
                 | Horizontal ls -> hl ls
                 | Vertical ls -> [hel l (Doc.Concat (vl ls))]
                 | Item x -> [hel l x]
-                | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)])
+                | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)]
+                | Wrap (l, f) -> [f (full {Shape = l; Label = None})])
         and vl =
             List.rev
             >> List.collect (fun l ->
@@ -74,8 +79,10 @@ and [<JavaScript>] Layout =
                 | Horizontal ls -> [vel l (Doc.Concat (hl ls))]
                 | Vertical ls -> vl ls
                 | Item x -> [vel l x]
-                | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)])
-        Doc.Concat (vl [l])
+                | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)]
+                | Wrap (l, f) -> [f (full {Shape = l; Label = None})])
+        and full l = Doc.Concat (vl [l])
+        full l
 
     static member Table l =
         let vel l x =
@@ -103,7 +110,8 @@ and [<JavaScript>] Layout =
                 | Horizontal ls -> hl ls
                 | Vertical ls -> [hel l (vwrap (vl ls))]
                 | Item x -> [hel l x]
-                | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)])
+                | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)]
+                | Wrap (l, f) -> [f (full {Shape = l; Label = None})])
         and vl =
             List.rev
             >> List.collect (fun l ->
@@ -111,11 +119,15 @@ and [<JavaScript>] Layout =
                 | Horizontal ls -> [vel l (hwrap (hl ls))]
                 | Vertical ls -> vl ls
                 | Item x -> [vel l x]
-                | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)])
-        match l.Shape with
-        | Horizontal ls -> hwrap (hl ls)
-        | Vertical ls -> vwrap (vl ls)
-        | Item _ | Varying _ -> vwrap (vl [l])
+                | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)]
+                | Wrap (l, f) -> [f (full {Shape = l; Label = None})])
+        and full l =
+            match l.Shape with
+            | Horizontal ls -> hwrap (hl ls)
+            | Vertical ls -> vwrap (vl ls)
+            | Item _ | Varying _ -> vwrap (vl [l])
+            | Wrap (l, f) -> f (full {Shape = l; Label = None})
+        full l
 
 type Result<'T> =
     | Success of 'T
@@ -221,7 +233,15 @@ module Formlet =
             let sub = Submitter.Create flX.View (Failure [])
             {
                 View = sub.View
-                Layout = Layout.Item (Doc.Button txt [] sub.Trigger) :: flX.Layout
+                Layout =
+                    Layout.Item (
+                        Doc.Element "input" [
+                            Attr.Create "type" "button"
+                            Attr.Create "value" txt
+                            Attr.Class "submitButton"
+                            Attr.Handler "click" (fun _ _ -> sub.Trigger())
+                        ] [])
+                    :: flX.Layout
             })
 
     let Horizontal (Formlet flX) =
@@ -262,7 +282,11 @@ module Formlet =
                             (View.Map2 Result.Append))
                 Layout =
                     [
-                        Layout.Item (Doc.Button "Add" [] (fun () -> m.Add (Key.Fresh(), f render)))
+                        Layout.Item (
+                            Doc.Element "div" [
+                                Attr.Class "addIcon"
+                                Attr.Handler "click" (fun _ _ -> m.Add (Key.Fresh(), f render))
+                            ] [])
                         Layout.Varying (
                             v.Map (
                                 Array.MapReduce
@@ -299,7 +323,10 @@ module Formlet =
                 Layout =
                     [
                         Layout.Item (
-                            Doc.Button "Add" [] (fun () -> m.Add (insertInit()))
+                            Doc.Element "div" [
+                                Attr.Class "addIcon"
+                                Attr.Handler "click" (fun _ _ -> m.Add (insertInit()))
+                            ] []
                             |> Doc.Append (Doc.EmbedView cb))
                         Layout.Varying (
                             v.Map (
@@ -346,6 +373,13 @@ module Formlet =
             | [x] -> [{x with Label = label}]
             | ls -> [{Shape = LayoutShape.Vertical ls; Label = label}])
 
+    let WrapLayout f flX =
+        flX |> MapLayout (fun ls -> [Layout.OfList ls |> Layout.Wrap f])
+
+    let WithFormContainer flX =
+        flX |> WrapLayout (fun d ->
+            Doc.Element "form" [Attr.Class "formlet"] [d] :> _)
+
     type Builder internal () =
         member this.Return x = Return x
         member this.ReturnFrom flX = flX
@@ -372,7 +406,7 @@ module Controls =
         Formlet (fun render ->
             {
                 View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.Input [] var)]
+                Layout = [Layout.Item (Doc.Input [Attr.Class "inputText"] var)]
             })
 
     let Input init =
@@ -380,14 +414,14 @@ module Controls =
             let var = Var.Create init
             {
                 View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.Input [] var)]
+                Layout = [Layout.Item (Doc.Input [Attr.Class "inputText"] var)]
             })
 
     let CheckBoxVar (var: IRef<bool>) =
         Formlet (fun render ->
             {
                 View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.CheckBox [] var)]
+                Layout = [Layout.Item (Doc.CheckBox [Attr.Class "inputCheckbox"] var)]
             })
 
     let CheckBox init =
@@ -395,7 +429,7 @@ module Controls =
             let var = Var.Create init
             {
                 View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.CheckBox [] var)]
+                Layout = [Layout.Item (Doc.CheckBox [Attr.Class "inputCheckbox"] var)]
             })
 
     let SelectVar (var: IRef<'T>) (items: list<'T * string>) =
@@ -423,7 +457,7 @@ module Controls =
                     |> List.map (fun (value, label) ->
                         Layout.Item (
                             Doc.Element "label" [] [
-                                Doc.Radio [] value var
+                                Doc.Radio [Attr.Class "inputRadio"] value var
                                 Doc.TextNode label
                             ])))
             })

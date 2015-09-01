@@ -15,6 +15,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Formlets.fs" />
+    <Compile Include="Resources.fs" />
+    <EmbeddedResource Include="styles/Formlet.css" />
+    <EmbeddedResource Include="images/ActionAdd.png" />
+    <EmbeddedResource Include="images/ActionCheck.png" />
+    <EmbeddedResource Include="images/ActionDelete.png" />
+    <EmbeddedResource Include="images/ErrorIcon.png" />
+    <EmbeddedResource Include="images/InfoIcon.png" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
