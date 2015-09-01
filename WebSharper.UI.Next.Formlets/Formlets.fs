@@ -342,3 +342,17 @@ module Controls =
             })
 
     let Radio init items = RadioVar (Var.Create init) items
+
+[<JavaScript>]
+module Validation =
+
+    let Is pred msg flX =
+        flX |> Formlet.MapToResult (fun x ->
+            if pred x then Success x else Failure [msg])
+
+    let IsNotEmpty msg flX =
+        Is ((<>) "") msg flX
+
+    let IsMatch regex msg flX =
+        let re = RegExp(regex)
+        Is re.Test msg flX
