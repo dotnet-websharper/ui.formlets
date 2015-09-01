@@ -55,6 +55,11 @@ module Result =
         | Success x -> Success (f x)
         | Failure m -> Failure m
 
+    let Bind f rX =
+        match rX with
+        | Success x -> f x
+        | Failure m -> Failure m
+
     let Apply rF rX =
         match rF with
         | Success f ->
@@ -118,6 +123,23 @@ module Formlet =
         Formlet (fun render ->
             let flX = flX render
             { flX with Layout = f flX.Layout })
+
+    let MapResult f (Formlet flX) =
+        Formlet (fun render ->
+            let flX = flX render
+            {
+                View = flX.View.Map f
+                Layout = flX.Layout
+            })
+
+    let MapToResult f flX =
+        MapResult (Result.Bind f) flX
+
+    let Map f flX =
+        MapResult (Result.Map f) flX
+
+    let LiftResult flX =
+        MapResult Success flX
 
     let WithSubmit txt (Formlet flX) =
         Formlet (fun render ->
