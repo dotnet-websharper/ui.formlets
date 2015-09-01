@@ -33,12 +33,9 @@ module Main =
                 <*> (Formlet.Do {
                         let! x = Controls.CheckBoxVar (item.Lens (snd >> fst) (fun (ab, (c, d)) c' -> ab, (c', d)))
                         let! y =
-                            if x then
-                                Controls.SelectVar (item.Lens (snd >> snd) (fun (ab, (c, d)) d' -> ab, (c, d')))
-                                    [HU, "Hungary"; FR, "France"]
-                            else
-                                Controls.RadioVar (item.Lens (snd >> snd) (fun (ab, (c, d)) d' -> ab, (c, d')))
-                                    [HU, "Hungary"; FR, "France"]
+                            (if x then Controls.SelectVar else Controls.RadioVar)
+                                (item.Lens (snd >> snd) (fun (ab, (c, d)) d' -> ab, (c, d')))
+                                [HU, "Hungary"; FR, "France"]
                             |> Formlet.Horizontal
                         return x, y
                     }
@@ -53,7 +50,7 @@ module Main =
                 <*> Controls.CheckBox true
                 <*> Controls.Select HU [HU, "Hungary"; FR, "France"]
                 |> Formlet.Horizontal)
-//            Formlet.Many f1
+//        Formlet.Many f1
         manyModel
         |> Formlet.WithSubmit "Submit"
         |> Formlet.Run (fun x -> Console.Log x; JS.Window?foo <- x)

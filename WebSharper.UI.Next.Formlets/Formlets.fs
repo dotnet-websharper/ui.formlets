@@ -21,22 +21,27 @@ type Layout =
         | ls -> Layout.Vertical ls
 
     static member Render l =
+        let hel x =
+            Doc.Element "div" [Attr.Style "display" "inline-block"] [x] :> Doc
+        let vel x =
+            Doc.Element "div" [] [x] :> Doc
+        let rec hl =
+            List.rev
+            >> List.collect (function
+                | Horizontal ls -> hl ls
+                | Vertical ls -> [hel (Doc.Concat (vl ls))]
+                | Item x -> [hel x]
+                | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)])
+        and vl =
+            List.rev
+            >> List.collect (function
+                | Horizontal ls -> [vel (Doc.Concat (hl ls))]
+                | Vertical ls -> vl ls
+                | Item x -> [vel x]
+                | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)])
         match l with
-        | Horizontal ls ->
-            List.fold (fun ds l ->
-                Doc.Element "div" [Attr.Style "display" "inline-block"] [Layout.Render l] :> Doc
-                :: ds)
-                [] ls
-            |> Doc.Concat
-        | Vertical ls ->
-            List.fold (fun ds l ->
-                Doc.Element "div" [] [Layout.Render l] :> Doc
-                :: ds)
-                [] ls
-            |> Doc.Concat
-        | Item d -> d
-        | Varying v ->
-            v |> Doc.BindView (Layout.OfList >> Layout.Render)
+        | Horizontal ls -> Doc.Concat (hl ls)
+        | l -> Doc.Concat (vl [l])
 
 type Result<'T> =
     | Success of 'T
