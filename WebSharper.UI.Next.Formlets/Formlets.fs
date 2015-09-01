@@ -8,25 +8,6 @@ open WebSharper.UI.Next
 open WebSharper.UI.Next.Client
 open WebSharper.UI.Next.Notation
 
-[<AutoOpen; JavaScript>]
-module private Utils =
-
-    module Array =
-
-        let MapReduce (f: 'A -> 'B) (z: 'B) (re: 'B -> 'B -> 'B) (a: 'A[]) : 'B =
-            let rec loop off len =
-                match len with
-                | n when n <= 0 -> z
-                | 1 when off >= 0 && off < a.Length ->
-                    f a.[off]
-                | n ->
-                    let l2 = len / 2
-                    let a = loop off l2
-                    let b = loop (off + l2) (len - l2)
-                    re a b
-            loop 0 a.Length
-
-
 [<JavaScript>]
 type Layout =
     | Item of Doc
@@ -97,7 +78,13 @@ type internal FormletData<'T> =
         Layout : list<Layout>
     }
 
-type Formlet<'T> = internal Formlet of ((Layout -> Doc) -> FormletData<'T>)
+[<JavaScript>]
+type Formlet<'T> =
+    internal | Formlet of ((Layout -> Doc) -> FormletData<'T>)
+
+    member internal this.Data =
+        let (Formlet d) = this
+        d
 
 [<JavaScript>]
 module Formlet =
@@ -189,15 +176,13 @@ module Formlet =
             let mf = ListModel.Create fst []
             m.Iter(fun x ->
                 let k = m.Key x
-                let (Formlet fl) = f (m.Lens k)
-                mf.Add(k, fl render))
+                mf.Add(k, (f (m.Lens k)).Data render))
             let cb =
                 m.View.Map (fun xs ->
                     for x in xs do
                         let k = m.Key x
                         if not (mf.ContainsKey k) then
-                            let (Formlet fl) = f (m.Lens k)
-                            mf.Add(k, fl render)
+                            mf.Add(k, (f (m.Lens k)).Data render)
                     for (k, _) in mf.Value do
                         if not (m.ContainsKey k) then
                             mf.RemoveByKey k
@@ -224,12 +209,35 @@ module Formlet =
                     ]
             })
 
+    let Bind (Formlet flX : Formlet<'T>) (f: 'T -> Formlet<'U>) : Formlet<'U> =
+        Formlet (fun render ->
+            let flX = flX render
+            let v = flX.View.Map (Result.Map (fun x -> ((f x).Data render)))
+            {
+                View = v.Bind (function
+                    | Success x -> x.View
+                    | Failure m -> View.Const (Failure m))
+                Layout =
+                    Layout.Varying (
+                        v.Map (function
+                            | Failure _ -> []
+                            | Success flY -> flY.Layout))
+                    :: flX.Layout
+            })
+
     let OfDoc (f: unit -> Doc) =
         Formlet (fun render ->
             {
                 View = View.Const (Success ())
-                Layout = [Item (f())]
+                Layout = [Item (f ())]
             })
+
+    type Builder internal () =
+        member this.Return x = Return x
+        member this.ReturnFrom flX = flX
+        member this.Bind(flX, f) = Bind flX f
+
+    let Do = Builder()
 
 [<AutoOpen; JavaScript>]
 module Pervasives =
