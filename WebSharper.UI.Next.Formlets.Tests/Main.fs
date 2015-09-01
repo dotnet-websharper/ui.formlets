@@ -29,7 +29,8 @@ module Main =
         let manyModel =
             Formlet.ManyWithModel lm (fun () -> (Key.Fresh(), "b"), (true, HU)) (fun item ->
                 Formlet.Return (fun b (c, d) -> b, c, d)
-                <*> Controls.InputVar (item.Lens (fst >> snd) (fun ((a, b), cd) b' -> (a, b'), cd))
+                <*> (Controls.InputVar (item.Lens (fst >> snd) (fun ((a, b), cd) b' -> (a, b'), cd))
+                    |> Formlet.WithTextLabel "First field:")
                 <*> (Formlet.Do {
                         let! x = Controls.CheckBoxVar (item.Lens (snd >> fst) (fun (ab, (c, d)) c' -> ab, (c', d)))
                         let! y =
@@ -53,5 +54,7 @@ module Main =
 //        Formlet.Many f1
         manyModel
         |> Formlet.WithSubmit "Submit"
-        |> Formlet.Run (fun x -> Console.Log x; JS.Window?foo <- x)
+        |> Formlet.RunWithLayout Layout.Table (fun x ->
+            Console.Log x
+            JS.Window?foo <- x)
         |> Doc.RunById "main"

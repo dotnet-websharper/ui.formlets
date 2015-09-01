@@ -9,39 +9,113 @@ open WebSharper.UI.Next.Client
 open WebSharper.UI.Next.Notation
 
 [<JavaScript>]
-type Layout =
+type LayoutShape =
     | Item of Doc
     | Varying of View<list<Layout>>
     | Horizontal of list<Layout>
     | Vertical of list<Layout>
+
+and [<JavaScript>] Layout =
+    {
+        Shape : LayoutShape
+        Label : option<Doc>
+    }
+
+    static member Horizontal xs =
+        {
+            Shape = LayoutShape.Horizontal xs
+            Label = None
+        }
+
+    static member Vertical xs =
+        {
+            Shape = LayoutShape.Vertical xs
+            Label = None
+        }
+
+    static member Item doc =
+        {
+            Shape = LayoutShape.Item doc
+            Label = None
+        }
+
+    static member Varying view =
+        {
+            Shape = LayoutShape.Varying view
+            Label = None
+        }
 
     static member OfList ls =
         match ls with
         | [l] -> l
         | ls -> Layout.Vertical ls
 
-    static member Render l =
-        let hel x =
-            Doc.Element "div" [Attr.Style "display" "inline-block"] [x] :> Doc
-        let vel x =
-            Doc.Element "div" [] [x] :> Doc
+    static member Flat l =
+        let label l (x: Doc) =
+            match l.Label with
+            | None -> [x]
+            | Some l -> [Doc.Element "label" [] [l; x]]
+        let hel l x =
+            Doc.Element "div" [Attr.Style "display" "inline-block"] (label l x) :> Doc
+        let vel l x =
+            Doc.Element "div" [] (label l x) :> Doc
         let rec hl =
             List.rev
-            >> List.collect (function
+            >> List.collect (fun l ->
+                match l.Shape with
                 | Horizontal ls -> hl ls
-                | Vertical ls -> [hel (Doc.Concat (vl ls))]
-                | Item x -> [hel x]
+                | Vertical ls -> [hel l (Doc.Concat (vl ls))]
+                | Item x -> [hel l x]
                 | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)])
         and vl =
             List.rev
-            >> List.collect (function
-                | Horizontal ls -> [vel (Doc.Concat (hl ls))]
+            >> List.collect (fun l ->
+                match l.Shape with
+                | Horizontal ls -> [vel l (Doc.Concat (hl ls))]
                 | Vertical ls -> vl ls
-                | Item x -> [vel x]
+                | Item x -> [vel l x]
                 | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)])
-        match l with
-        | Horizontal ls -> Doc.Concat (hl ls)
-        | l -> Doc.Concat (vl [l])
+        Doc.Concat (vl [l])
+
+    static member Table l =
+        let vel l x =
+            Doc.Element "tr" [] [
+                Doc.Element "td" [] (Option.toList l.Label)
+                Doc.Element "td" [] [x]
+            ] :> Doc
+        let vwrap vels =
+            Doc.Element "table" [] [
+                Doc.Element "tbody" [] vels
+            ]
+            :> Doc
+        let hel l x =
+            Doc.Append
+                (match l.Label with
+                    | None -> Doc.Empty
+                    | Some l -> Doc.Element "td" [] [l] :> _)
+                (Doc.Element "td" [] [x])
+        let hwrap hels =
+            vwrap [Doc.Element "tr" [] hels]
+        let rec hl =
+            List.rev
+            >> List.collect (fun l ->
+                match l.Shape with
+                | Horizontal ls -> hl ls
+                | Vertical ls -> [hel l (vwrap (vl ls))]
+                | Item x -> [hel l x]
+                | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)])
+        and vl =
+            List.rev
+            >> List.collect (fun l ->
+                match l.Shape with
+                | Horizontal ls -> [vel l (hwrap (hl ls))]
+                | Vertical ls -> vl ls
+                | Item x -> [vel l x]
+                | Varying v -> [v |> Doc.BindView (vl >> Doc.Concat)])
+        match l.Shape with
+        | Horizontal ls -> hwrap (hl ls)
+        | Vertical ls -> vwrap (vl ls)
+        | Item _ | Varying _ -> vwrap (vl [l])
 
 type Result<'T> =
     | Success of 'T
@@ -117,7 +191,7 @@ module Formlet =
         |> Doc.Append (render (Layout.OfList flX.Layout))
 
     let Run f flX =
-        RunWithLayout Layout.Render f flX
+        RunWithLayout Layout.Flat f flX
 
     let MapLayout f (Formlet flX) =
         Formlet (fun render ->
@@ -156,7 +230,7 @@ module Formlet =
             { flX with
                 Layout =
                     match flX.Layout with
-                    | [Layout.Vertical ls] -> [Layout.Horizontal ls]
+                    | [{Shape = Vertical ls}] -> [Layout.Horizontal ls]
                     | [] | [_] as ls -> ls
                     | ls -> [Layout.Horizontal ls]
             })
@@ -167,7 +241,7 @@ module Formlet =
             { flX with
                 Layout =
                     match flX.Layout with
-                    | [Layout.Horizontal ls] -> [Layout.Vertical ls]
+                    | [{Shape = Horizontal ls}] -> [Layout.Vertical ls]
                     | [] | [_] as ls -> ls
                     | ls -> [Layout.Vertical ls]
             })
@@ -256,8 +330,21 @@ module Formlet =
         Formlet (fun render ->
             {
                 View = View.Const (Success ())
-                Layout = [Item (f ())]
+                Layout = [Layout.Item (f ())]
             })
+
+    let WithLabel label flX =
+        MapLayout (function
+            | [x] -> [{x with Label = Some label}]
+            | ls -> [{Shape = LayoutShape.Vertical ls; Label = Some label}])
+            flX
+
+    let WithTextLabel label flX =
+        flX |> MapLayout (fun l ->
+            let label = Some (Doc.Element "label" [] [Doc.TextNode label] :> Doc)
+            match l with
+            | [x] -> [{x with Label = label}]
+            | ls -> [{Shape = LayoutShape.Vertical ls; Label = label}])
 
     type Builder internal () =
         member this.Return x = Return x
