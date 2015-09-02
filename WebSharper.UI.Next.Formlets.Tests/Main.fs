@@ -72,7 +72,10 @@ module Server =
     open WebSharper.Sitelets
     open WebSharper.UI.Next.Server
 
-    type Template = Templating.Template<"index.html">
+    [<Literal>]
+    let TemplatePath = __SOURCE_DIRECTORY__ + "/index.html"
+
+    type Template = Templating.Template<TemplatePath>
 
     [<Website>]
     let Website =
