@@ -25,7 +25,7 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
-  <Import Project="..\build\net40\$(Name).proj" />
+  <Import Project="bin\$(Name).proj" />
   <ItemGroup>
     <Compile Include="Main.fs" />
     <None Include="Global.asax" />

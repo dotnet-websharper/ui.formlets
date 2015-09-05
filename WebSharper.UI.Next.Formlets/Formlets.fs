@@ -176,7 +176,7 @@ type internal FormletData<'T> =
 
 [<JavaScript>]
 type Formlet<'T> =
-    internal | Formlet of ((Layout -> Doc) -> FormletData<'T>)
+    internal | Formlet of (unit -> FormletData<'T>)
 
     member internal this.Data =
         let (Formlet d) = this
@@ -186,14 +186,14 @@ type Formlet<'T> =
 module Formlet =
 
     let Return x =
-        Formlet (fun render ->
+        Formlet (fun () ->
             {
                 View = View.Const (Success x)
                 Layout = []
             })
 
     let RunWithLayout render f (Formlet flX) =
-        let flX = flX render
+        let flX = flX ()
         flX.View
         |> Doc.BindView (fun r ->
             match r with
@@ -206,13 +206,13 @@ module Formlet =
         RunWithLayout Layout.Flat f flX
 
     let MapLayout f (Formlet flX) =
-        Formlet (fun render ->
-            let flX = flX render
+        Formlet (fun () ->
+            let flX = flX ()
             { flX with Layout = f flX.Layout })
 
     let MapResult f (Formlet flX) =
-        Formlet (fun render ->
-            let flX = flX render
+        Formlet (fun () ->
+            let flX = flX ()
             {
                 View = flX.View.Map f
                 Layout = flX.Layout
@@ -228,8 +228,8 @@ module Formlet =
         MapResult Success flX
 
     let WithSubmit txt (Formlet flX) =
-        Formlet (fun render ->
-            let flX = flX render
+        Formlet (fun () ->
+            let flX = flX ()
             let sub = Submitter.Create flX.View (Failure [])
             {
                 View = sub.View
@@ -245,8 +245,8 @@ module Formlet =
             })
 
     let Horizontal (Formlet flX) =
-        Formlet (fun render ->
-            let flX = flX render
+        Formlet (fun () ->
+            let flX = flX ()
             { flX with
                 Layout =
                     match flX.Layout with
@@ -256,8 +256,8 @@ module Formlet =
             })
 
     let Vertical (Formlet flX) =
-        Formlet (fun render ->
-            let flX = flX render
+        Formlet (fun () ->
+            let flX = flX ()
             { flX with
                 Layout =
                     match flX.Layout with
@@ -267,7 +267,7 @@ module Formlet =
             })
 
     let Many (Formlet f) =
-        Formlet (fun render ->
+        Formlet (fun () ->
             let m = ListModel.Create fst []
             let v =
                 m.View
@@ -285,7 +285,7 @@ module Formlet =
                         Layout.Item (
                             Doc.Element "div" [
                                 Attr.Class "addIcon"
-                                Attr.Handler "click" (fun _ _ -> m.Add (Key.Fresh(), f render))
+                                Attr.Handler "click" (fun _ _ -> m.Add (Key.Fresh(), f ()))
                             ] [])
                         Layout.Varying (
                             v.Map (
@@ -297,17 +297,17 @@ module Formlet =
             })
 
     let ManyWithModel (m: ListModel<'K, 'T>) (insertInit: unit -> 'T) (f: IRef<'T> -> Formlet<'U>) =
-        Formlet (fun render ->
+        Formlet (fun () ->
             let mf = ListModel.Create fst []
             m.Iter(fun x ->
                 let k = m.Key x
-                mf.Add(k, (f (m.Lens k)).Data render))
+                mf.Add(k, (f (m.Lens k)).Data ()))
             let cb =
                 m.View.Map (fun xs ->
                     for x in xs do
                         let k = m.Key x
                         if not (mf.ContainsKey k) then
-                            mf.Add(k, (f (m.Lens k)).Data render)
+                            mf.Add(k, (f (m.Lens k)).Data ())
                     for (k, _) in mf.Value do
                         if not (m.ContainsKey k) then
                             mf.RemoveByKey k
@@ -338,9 +338,9 @@ module Formlet =
             })
 
     let Bind (Formlet flX : Formlet<'T>) (f: 'T -> Formlet<'U>) : Formlet<'U> =
-        Formlet (fun render ->
-            let flX = flX render
-            let v = flX.View.Map (Result.Map (fun x -> ((f x).Data render)))
+        Formlet (fun () ->
+            let flX = flX ()
+            let v = flX.View.Map (Result.Map (fun x -> ((f x).Data ())))
             {
                 View = v.Bind (function
                     | Success x -> x.View
@@ -354,7 +354,7 @@ module Formlet =
             })
 
     let OfDoc (f: unit -> Doc) =
-        Formlet (fun render ->
+        Formlet (fun () ->
             {
                 View = View.Const (Success ())
                 Layout = [Layout.Item (f ())]
@@ -391,9 +391,9 @@ module Formlet =
 module Pervasives =
 
     let (<*>) (Formlet flF) (Formlet flX) =
-        Formlet (fun render ->
-            let flF = flF render
-            let flX = flX render
+        Formlet (fun () ->
+            let flF = flF ()
+            let flX = flX ()
             {
                 View = View.Map2 Result.Apply flF.View flX.View
                 Layout = flX.Layout @ flF.Layout
@@ -403,14 +403,14 @@ module Pervasives =
 module Controls =
 
     let InputVar (var: IRef<string>) =
-        Formlet (fun render ->
+        Formlet (fun () ->
             {
                 View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.Input [Attr.Class "inputText"] var)]
             })
 
     let Input init =
-        Formlet (fun render ->
+        Formlet (fun () ->
             let var = Var.Create init
             {
                 View = var.View |> View.Map Success
@@ -418,14 +418,14 @@ module Controls =
             })
 
     let CheckBoxVar (var: IRef<bool>) =
-        Formlet (fun render ->
+        Formlet (fun () ->
             {
                 View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.CheckBox [Attr.Class "inputCheckbox"] var)]
             })
 
     let CheckBox init =
-        Formlet (fun render ->
+        Formlet (fun () ->
             let var = Var.Create init
             {
                 View = var.View |> View.Map Success
@@ -439,7 +439,7 @@ module Controls =
             |> List.map (fun (value, label) ->
                 labels.[value] <- label
                 value)
-        Formlet (fun render ->
+        Formlet (fun () ->
             {
                 View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.Select [] (fun v -> labels.[v]) values var)]
@@ -448,7 +448,7 @@ module Controls =
     let Select init items = SelectVar (Var.Create init) items
 
     let RadioVar (var: IRef<'T>) (items: list<'T * string>) =
-        Formlet (fun render ->
+        Formlet (fun () ->
             {
                 View = var.View |> View.Map Success
                 Layout =
