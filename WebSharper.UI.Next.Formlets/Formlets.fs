@@ -247,24 +247,28 @@ module Formlet =
     let Horizontal (Formlet flX) =
         Formlet (fun () ->
             let flX = flX ()
-            { flX with
-                Layout =
-                    match flX.Layout with
-                    | [{Shape = Vertical ls}] -> [Layout.Horizontal ls]
-                    | [] | [_] as ls -> ls
-                    | ls -> [Layout.Horizontal ls]
-            })
+            let rec toHorizontal = function
+                | [] -> []
+                | [l] ->
+                    [(match l.Shape with
+                        | Vertical ls -> { l with Shape = Horizontal ls }
+                        | Varying v -> { l with Shape = Varying (View.Map toHorizontal v) }
+                        | _ -> l)]
+                | ls -> [{ Shape = Horizontal ls; Label = None }]
+            { flX with Layout = toHorizontal flX.Layout })
 
     let Vertical (Formlet flX) =
         Formlet (fun () ->
             let flX = flX ()
-            { flX with
-                Layout =
-                    match flX.Layout with
-                    | [{Shape = Horizontal ls}] -> [Layout.Vertical ls]
-                    | [] | [_] as ls -> ls
-                    | ls -> [Layout.Vertical ls]
-            })
+            let rec toVertical = function
+                | [] -> []
+                | [l] ->
+                    [(match l.Shape with
+                        | Horizontal ls -> { l with Shape = Vertical ls }
+                        | Varying v -> { l with Shape = Varying (View.Map toVertical v) }
+                        | _ -> l)]
+                | ls -> [{ Shape = Vertical ls; Label = None }]
+            { flX with Layout = toVertical flX.Layout })
 
     let Many (Formlet f) =
         Formlet (fun () ->
