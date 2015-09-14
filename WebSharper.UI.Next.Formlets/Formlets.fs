@@ -420,20 +420,17 @@ module Controls =
         Input' (fun () -> Var.Create init :> _)
 
     // IntInput (CheckedInput<int>)
-    let private IntInput' (var: unit -> IRef<CheckedInput<int>>) onBlank onInvalid =
+    let private IntInput' (var: unit -> IRef<CheckedInput<int>>) =
         Formlet (fun () ->
             let var = var()
             {
-                View = var.View |> View.Map (function
-                        | CheckedInput.Valid (x, _) -> Success x
-                        | CheckedInput.Blank _ -> onBlank
-                        | CheckedInput.Invalid txt -> onInvalid txt)
+                View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.IntInput [Attr.Class "inputText"] var)]
             })
-    let IntInputVar var onBlank onInvalid =
-        IntInput' (fun () -> var) onBlank onInvalid
-    let IntInput init onBlank onInvalid =
-        IntInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _) onBlank onInvalid
+    let IntInputVar var =
+        IntInput' (fun () -> var)
+    let IntInput init =
+        IntInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _)
 
     // IntInputUnchecked (int)
     let private IntInputUnchecked' (var: unit -> IRef<int>) =
@@ -449,20 +446,17 @@ module Controls =
         IntInputUnchecked' (fun () -> Var.Create init :> _)
 
     // FloatInput (CheckedInput<Float>)
-    let private FloatInput' (var: unit -> IRef<CheckedInput<float>>) onBlank onInvalid =
+    let private FloatInput' (var: unit -> IRef<CheckedInput<float>>) =
         Formlet (fun () ->
             let var = var()
             {
-                View = var.View |> View.Map (function
-                        | CheckedInput.Valid (x, _) -> Success x
-                        | CheckedInput.Blank _ -> onBlank
-                        | CheckedInput.Invalid txt -> onInvalid txt)
+                View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.FloatInput [Attr.Class "inputText"] var)]
             })
-    let FloatInputVar var onBlank onInvalid =
-        FloatInput' (fun () -> var) onBlank onInvalid
-    let FloatInput init onBlank onInvalid =
-        FloatInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _) onBlank onInvalid
+    let FloatInputVar var =
+        FloatInput' (fun () -> var)
+    let FloatInput init =
+        FloatInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _)
 
     // FloatInputUnchecked (float)
     let private FloatInputUnchecked' (var: unit -> IRef<float>) =
