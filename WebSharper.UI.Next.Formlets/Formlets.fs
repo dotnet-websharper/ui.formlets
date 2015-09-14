@@ -406,37 +406,92 @@ module Pervasives =
 [<JavaScript>]
 module Controls =
 
-    let InputVar (var: IRef<string>) =
+    // Input (string)
+    let private Input' (var: unit -> IRef<string>) =
         Formlet (fun () ->
+            let var = var()
             {
                 View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.Input [Attr.Class "inputText"] var)]
             })
-
+    let InputVar var =
+        Input' (fun () -> var)
     let Input init =
+        Input' (fun () -> Var.Create init :> _)
+
+    // IntInput (CheckedInput<int>)
+    let private IntInput' (var: unit -> IRef<CheckedInput<int>>) onBlank onInvalid =
         Formlet (fun () ->
-            let var = Var.Create init
+            let var = var()
+            {
+                View = var.View |> View.Map (function
+                        | CheckedInput.Valid (x, _) -> Success x
+                        | CheckedInput.Blank _ -> onBlank
+                        | CheckedInput.Invalid txt -> onInvalid txt)
+                Layout = [Layout.Item (Doc.IntInput [Attr.Class "inputText"] var)]
+            })
+    let IntInputVar var onBlank onInvalid =
+        IntInput' (fun () -> var) onBlank onInvalid
+    let IntInput init onBlank onInvalid =
+        IntInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _) onBlank onInvalid
+
+    // IntInputUnchecked (int)
+    let private IntInputUnchecked' (var: unit -> IRef<int>) =
+        Formlet (fun () ->
+            let var = var()
             {
                 View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.Input [Attr.Class "inputText"] var)]
+                Layout = [Layout.Item (Doc.IntInputUnchecked [Attr.Class "inputText"] var)]
             })
+    let IntInputVarUnchecked var =
+        IntInputUnchecked' (fun () -> var)
+    let IntInputUnchecked init =
+        IntInputUnchecked' (fun () -> Var.Create init :> _)
 
-    let CheckBoxVar (var: IRef<bool>) =
+    // FloatInput (CheckedInput<Float>)
+    let private FloatInput' (var: unit -> IRef<CheckedInput<float>>) onBlank onInvalid =
         Formlet (fun () ->
+            let var = var()
+            {
+                View = var.View |> View.Map (function
+                        | CheckedInput.Valid (x, _) -> Success x
+                        | CheckedInput.Blank _ -> onBlank
+                        | CheckedInput.Invalid txt -> onInvalid txt)
+                Layout = [Layout.Item (Doc.FloatInput [Attr.Class "inputText"] var)]
+            })
+    let FloatInputVar var onBlank onInvalid =
+        FloatInput' (fun () -> var) onBlank onInvalid
+    let FloatInput init onBlank onInvalid =
+        FloatInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _) onBlank onInvalid
+
+    // FloatInputUnchecked (float)
+    let private FloatInputUnchecked' (var: unit -> IRef<float>) =
+        Formlet (fun () ->
+            let var = var()
+            {
+                View = var.View |> View.Map Success
+                Layout = [Layout.Item (Doc.FloatInputUnchecked [Attr.Class "inputText"] var)]
+            })
+    let FloatInputVarUnchecked var =
+        FloatInputUnchecked' (fun () -> var)
+    let FloatInputUnchecked init =
+        FloatInputUnchecked' (fun () -> Var.Create init :> _)
+
+    // CheckBox (bool)
+    let private CheckBox' (var: unit -> IRef<bool>) =
+        Formlet (fun () ->
+            let var = var()
             {
                 View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.CheckBox [Attr.Class "inputCheckbox"] var)]
             })
-
+    let CheckBoxVar var =
+        CheckBox' (fun () -> var)
     let CheckBox init =
-        Formlet (fun () ->
-            let var = Var.Create init
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.CheckBox [Attr.Class "inputCheckbox"] var)]
-            })
+        CheckBox' (fun () -> Var.Create init :> _)
 
-    let SelectVar (var: IRef<'T>) (items: list<'T * string>) =
+    // Select ('T)
+    let private Select' (var: unit -> IRef<'T>) (items: list<'T * string>) =
         let labels = Dictionary()
         let values =
             items
@@ -444,15 +499,20 @@ module Controls =
                 labels.[value] <- label
                 value)
         Formlet (fun () ->
+            let var = var()
             {
                 View = var.View |> View.Map Success
                 Layout = [Layout.Item (Doc.Select [] (fun v -> labels.[v]) values var)]
             })
+    let SelectVar var items =
+        Select' (fun () -> var) items
+    let Select init items =
+        Select' (fun () -> Var.Create init :> _) items
 
-    let Select init items = SelectVar (Var.Create init) items
-
-    let RadioVar (var: IRef<'T>) (items: list<'T * string>) =
+    // Radio ('T)
+    let private Radio' (var: unit -> IRef<'T>) (items: list<'T * string>) =
         Formlet (fun () ->
+            let var = var()
             {
                 View = var.View |> View.Map Success
                 Layout =
@@ -465,8 +525,10 @@ module Controls =
                                 Doc.TextNode label
                             ])))
             })
-
-    let Radio init items = RadioVar (Var.Create init) items
+    let RadioVar var items =
+        Radio' (fun () -> var) items
+    let Radio init items =
+        Radio' (fun () -> Var.Create init :> _) items
 
 [<JavaScript>]
 module Validation =
