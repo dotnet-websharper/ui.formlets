@@ -406,102 +406,59 @@ module Pervasives =
 [<JavaScript>]
 module Controls =
 
-    // Input (string)
-    let private Input' (var: unit -> IRef<string>) =
+    let private Input' (var: unit -> IRef<'T>) (layout: IRef<'T> -> #Doc) : Formlet<'T> =
         Formlet (fun () ->
             let var = var()
             {
                 View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.Input [Attr.Class "inputText"] var)]
+                Layout = [Layout.Item (layout var)]
             })
-    let InputVar var =
-        Input' (fun () -> var)
-    let Input init =
-        Input' (fun () -> Var.Create init :> _)
+    let private InputVar' var layout =
+        Input' (fun () -> var) layout
+    let private InputInit' init layout =
+        Input' (fun () -> Var.Create init :> _) layout
+
+    // Input (string)
+    let private InputLayout var = Doc.Input [Attr.Class "inputText"] var
+    let InputVar var = InputVar' var InputLayout
+    let Input init = InputInit' init InputLayout
 
     // IntInput (CheckedInput<int>)
-    let private IntInput' (var: unit -> IRef<CheckedInput<int>>) =
-        Formlet (fun () ->
-            let var = var()
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.IntInput [Attr.Class "inputText"] var)]
-            })
-    let IntInputVar var =
-        IntInput' (fun () -> var)
-    let IntInput init =
-        IntInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _)
+    let private IntInputLayout var = Doc.IntInput [Attr.Class "inputText"] var
+    let IntInputVar var = InputVar' var IntInputLayout
+    let IntInput init = InputInit' init IntInputLayout
 
     // IntInputUnchecked (int)
-    let private IntInputUnchecked' (var: unit -> IRef<int>) =
-        Formlet (fun () ->
-            let var = var()
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.IntInputUnchecked [Attr.Class "inputText"] var)]
-            })
-    let IntInputVarUnchecked var =
-        IntInputUnchecked' (fun () -> var)
-    let IntInputUnchecked init =
-        IntInputUnchecked' (fun () -> Var.Create init :> _)
+    let private IntInputUncheckedLayout var = Doc.IntInputUnchecked [Attr.Class "inputText"] var
+    let IntInputVarUnchecked var = InputVar' var IntInputUncheckedLayout
+    let IntInputUnchecked init = InputInit' init IntInputUncheckedLayout
 
     // FloatInput (CheckedInput<Float>)
-    let private FloatInput' (var: unit -> IRef<CheckedInput<float>>) =
-        Formlet (fun () ->
-            let var = var()
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.FloatInput [Attr.Class "inputText"] var)]
-            })
-    let FloatInputVar var =
-        FloatInput' (fun () -> var)
-    let FloatInput init =
-        FloatInput' (fun () -> Var.Create (CheckedInput.Valid init) :> _)
+    let private FloatInputLayout var = Doc.FloatInput [Attr.Class "inputText"] var
+    let FloatInputVar var = InputVar' var FloatInputLayout
+    let FloatInput init = InputInit' init FloatInputLayout
 
     // FloatInputUnchecked (float)
-    let private FloatInputUnchecked' (var: unit -> IRef<float>) =
-        Formlet (fun () ->
-            let var = var()
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.FloatInputUnchecked [Attr.Class "inputText"] var)]
-            })
-    let FloatInputVarUnchecked var =
-        FloatInputUnchecked' (fun () -> var)
-    let FloatInputUnchecked init =
-        FloatInputUnchecked' (fun () -> Var.Create init :> _)
+    let private FloatInputUncheckedLayout var = Doc.FloatInputUnchecked [Attr.Class "inputText"] var
+    let FloatInputVarUnchecked var = InputVar' var FloatInputUncheckedLayout
+    let FloatInputUnchecked init = InputInit' init FloatInputUncheckedLayout
 
     // CheckBox (bool)
-    let private CheckBox' (var: unit -> IRef<bool>) =
-        Formlet (fun () ->
-            let var = var()
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.CheckBox [Attr.Class "inputCheckbox"] var)]
-            })
-    let CheckBoxVar var =
-        CheckBox' (fun () -> var)
-    let CheckBox init =
-        CheckBox' (fun () -> Var.Create init :> _)
+    let private CheckBoxLayout var = Doc.CheckBox [Attr.Class "inputCheckbox"] var
+    let CheckBoxVar var = InputVar' var CheckBoxLayout
+    let CheckBox init = InputInit' init CheckBoxLayout
 
     // Select ('T)
-    let private Select' (var: unit -> IRef<'T>) (items: list<'T * string>) =
+    let private Select' mk (items: list<'T * string>) =
         let labels = Dictionary()
         let values =
             items
             |> List.map (fun (value, label) ->
                 labels.[value] <- label
                 value)
-        Formlet (fun () ->
-            let var = var()
-            {
-                View = var.View |> View.Map Success
-                Layout = [Layout.Item (Doc.Select [] (fun v -> labels.[v]) values var)]
-            })
-    let SelectVar var items =
-        Select' (fun () -> var) items
-    let Select init items =
-        Select' (fun () -> Var.Create init :> _) items
+        mk (Doc.Select [] (fun v -> labels.[v]) values)
+    let SelectVar var items = Select' (InputVar' var) items
+    let Select init items = Select' (InputInit' init) items
 
     // Radio ('T)
     let private Radio' (var: unit -> IRef<'T>) (items: list<'T * string>) =
