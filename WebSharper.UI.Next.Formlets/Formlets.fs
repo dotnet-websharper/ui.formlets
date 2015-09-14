@@ -168,6 +168,16 @@ module Result =
             | Success _ -> r2
             | Failure m2 -> Failure (m1 @ m2)
 
+    let IsSuccess x =
+        match x with
+        | Success _ -> true
+        | Failure _ -> false
+
+    let IsFailure x =
+        match x with
+        | Success _ -> false
+        | Failure _ -> true
+
 type internal FormletData<'T> =
     {
         View : View<Result<'T>>
@@ -240,6 +250,9 @@ module Formlet =
                             Attr.Create "value" txt
                             Attr.Class "submitButton"
                             Attr.Handler "click" (fun _ _ -> sub.Trigger())
+                            Attr.DynamicPred "disabled"
+                                (sub.Input.Map Result.IsFailure)
+                                (View.Const "disabled")
                         ] [])
                     :: flX.Layout
             })

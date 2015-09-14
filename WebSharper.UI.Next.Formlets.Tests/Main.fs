@@ -33,6 +33,7 @@ module Client =
             Formlet.ManyWithModel lm (fun () -> (Key.Fresh(), "b"), (true, HU)) (fun item ->
                 Formlet.Return (fun b (c, d) -> b, c, d)
                 <*> (Controls.InputVar (item.Lens (fst >> snd) (fun ((a, b), cd) b' -> (a, b'), cd))
+                    |> Validation.IsNotEmpty "Please enter a first field value"
                     |> Formlet.WithTextLabel "First field:")
                 <*> (Formlet.Do {
                         let! x = Controls.CheckBoxVar (item.Lens (snd >> fst) (fun (ab, (c, d)) c' -> ab, (c', d)))
@@ -43,7 +44,8 @@ module Client =
                             |> Formlet.Horizontal
                         return x, y
                     }
-                    |> Formlet.Horizontal))
+                    |> Formlet.Horizontal
+                    |> Formlet.WithTextLabel "Second field:"))
         let f1 =
             Formlet.Return (fun (a, b) (c, d) -> a, b, c, d)
             <*> (Formlet.Return (fun x y -> x, y)

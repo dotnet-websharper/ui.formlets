@@ -151,8 +151,8 @@
 	background-color : #CCC;
 }
 
-.formlet input.submitButton.disabledButton,
-.formlet button.submitButton.disabledButton
+.formlet input.submitButton:disabled,
+.formlet button.submitButton:disabled
 {
 	color : #999999;
 }
