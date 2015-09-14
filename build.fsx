@@ -14,6 +14,15 @@ let main =
             [
                 r.NuGet("WebSharper.UI.Next").Reference()
             ])
+        .Embed(
+            [
+                "styles/Formlet.css"
+                "images/ActionAdd.png"
+                "images/ActionCheck.png"
+                "images/ActionDelete.png"
+                "images/ErrorIcon.png"
+                "images/InfoIcon.png"
+            ])
 
 let test =
     bt.WebSharper.SiteletWebsite("WebSharper.UI.Next.Formlets.Tests")
