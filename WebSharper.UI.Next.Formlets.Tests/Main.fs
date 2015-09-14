@@ -14,6 +14,9 @@ module Client =
         | [<Constant "HU">] HU
         | [<Constant "FR">] FR
 
+        static member ToString x =
+            match x with HU -> "HU" | FR -> "FR"
+
     let Pair flX flY =
         Formlet.Return (fun x y -> (x, y))
         <*> flX
@@ -52,6 +55,7 @@ module Client =
                 <*> Controls.Select HU [HU, "Hungary"; FR, "France"]
                 |> Formlet.Horizontal)
 //        Formlet.Many f1
+//        |> Formlet.WithSubmit "Submit"
         Formlet.Do {
             let! res =
                 manyModel
@@ -59,13 +63,13 @@ module Client =
             return! Formlet.OfDoc (fun () ->
                 res
                 |> Seq.map (fun (b, c, d) ->
-                    p [text (sprintf "%s %b %A" b c d)]
+                    Console.Log d
+                    p [text (sprintf "%s %b %s" b c (Country.ToString d))]
                     :> Doc)
                 |> Doc.Concat)
         }
         |> Formlet.WithFormContainer
         |> Formlet.RunWithLayout Layout.Table (fun x ->
-            Console.Log x
             JS.Window?foo <- x)
 
 module Server =
