@@ -63,18 +63,18 @@ and [<JavaScript>] Layout =
             Doc.Element "div" [Attr.Style "display" "inline-block"] (label l x) :> Doc
         let vel l x =
             Doc.Element "div" [] (label l x) :> Doc
-        let rec hl =
-            List.rev
-            >> List.collect (fun l ->
+        let rec hl x =
+            x |> List.rev
+            |> List.collect (fun l ->
                 match l.Shape with
                 | Horizontal ls -> hl ls
                 | Vertical ls -> [hel l (Doc.Concat (vl ls))]
                 | Item x -> [hel l x]
                 | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)]
                 | Wrap (l, f) -> [f (full {Shape = l; Label = None})])
-        and vl =
-            List.rev
-            >> List.collect (fun l ->
+        and vl x =
+            x |> List.rev
+            |> List.collect (fun l ->
                 match l.Shape with
                 | Horizontal ls -> [vel l (Doc.Concat (hl ls))]
                 | Vertical ls -> vl ls
@@ -103,18 +103,18 @@ and [<JavaScript>] Layout =
                 (Doc.Element "td" [] [x])
         let hwrap hels =
             vwrap [Doc.Element "tr" [] hels]
-        let rec hl =
-            List.rev
-            >> List.collect (fun l ->
+        let rec hl x =
+            x |> List.rev
+            |> List.collect (fun l ->
                 match l.Shape with
                 | Horizontal ls -> hl ls
                 | Vertical ls -> [hel l (vwrap (vl ls))]
                 | Item x -> [hel l x]
                 | Varying v -> [v |> Doc.BindView (hl >> Doc.Concat)]
                 | Wrap (l, f) -> [f (full {Shape = l; Label = None})])
-        and vl =
-            List.rev
-            >> List.collect (fun l ->
+        and vl x =
+            x |> List.rev
+            |> List.collect (fun l ->
                 match l.Shape with
                 | Horizontal ls -> [vel l (hwrap (hl ls))]
                 | Vertical ls -> vl ls
