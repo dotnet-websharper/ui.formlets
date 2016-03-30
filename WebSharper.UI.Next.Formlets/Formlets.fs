@@ -404,6 +404,74 @@ module Formlet =
 
     let Do = Builder()
 
+    module private ValidationView = 
+
+        open WebSharper.UI.Next.Html
+
+        let validationMessage = function 
+            | Success _ -> Doc.Empty
+            | Failure msg -> 
+                let m = msg |> List.fold (fun a s -> a + "\n" + s) ""
+                text m
+
+        let toggleValidationView (v : View<Result<_>>) = 
+            View.Map (
+                function 
+                | Success _ -> "hidden"
+                | Failure _ -> "visible"
+            ) v
+
+        let validationLayout doc validity = 
+            table [ 
+                tr [
+                    td [doc]
+                    td [validity]
+                ]
+            ] :> Doc
+
+        let validationViewWithTooltip res doc =
+            divAttr [attr.classDyn <| toggleValidationView res] [
+                divAttr [attr.``class`` "tooltip"] [
+                    divAttr [attr.``class`` "errorIcon"] []
+                    spanAttr 
+                        [attr.``class`` "tooltiptext"] 
+                        [Doc.BindView validationMessage res]
+                ]
+            ]
+            |> validationLayout doc
+
+        let validationViewIcon res doc =
+            divAttr [attr.classDyn <| toggleValidationView res] [
+                divAttr [attr.``class`` "errorIcon"] []
+            ]
+            |> validationLayout doc
+
+        let wrapIcon f v ls = 
+            Layout.OfList ls 
+            |> fun l -> 
+                match l.Shape with
+                | Item x -> {l with Shape = Item (f v x)}
+                | _ -> l |> Layout.Wrap (f v)
+            |> fun x -> [x]
+
+        let withValidation f (flX : Formlet<'T>) =
+            flX
+            |> fun flx -> 
+                Formlet (fun () ->
+                    let flx = flx.Data ()
+                    {
+                        View = flx.View
+                        Layout = wrapIcon f flx.View flx.Layout 
+                    })
+
+    module V = ValidationView
+
+    let WithValidationIconOnly (flX : Formlet<'T>) =
+        V.withValidation V.validationViewIcon flX
+
+    let WithValidationIcon (flX : Formlet<'T>) =
+        V.withValidation V.validationViewWithTooltip flX
+
 [<AutoOpen; JavaScript>]
 module Pervasives =
 
@@ -507,3 +575,4 @@ module Validation =
     let IsMatch regex msg flX =
         let re = RegExp(regex)
         Is re.Test msg flX
+
