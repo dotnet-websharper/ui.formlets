@@ -288,7 +288,7 @@ module Formlet =
             let m = ListModel.Create fst []
             let v =
                 m.View
-                |> View.ConvertBy m.Key snd
+                |> View.MapSeqCachedBy m.Key snd
                 |> View.Map Array.ofSeq
             {
                 View =
