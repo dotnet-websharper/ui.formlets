@@ -421,30 +421,24 @@ module Formlet =
                 | Failure _ -> "visible"
             ) v
 
-        let validationLayout doc validity = 
+        let validationViewWithTooltip res doc = 
             table [ 
                 tr [
-                    td [doc]
-                    td [validity]
+                    tdAttr [attr.``class`` "tooltip"] [
+                        doc
+                        divAttr [attr.classDyn <| toggleValidationView res] [
+                           spanAttr 
+                                [attr.``class`` "tooltiptext"] 
+                                [Doc.BindView validationMessage res]
+                        ]
+                    ]
+                    td [
+                        divAttr [attr.classDyn <| toggleValidationView res] [
+                            divAttr [attr.``class`` "errorIcon"] []
+                        ]
+                    ]
                 ]
             ] :> Doc
-
-        let validationViewWithTooltip res doc =
-            divAttr [attr.classDyn <| toggleValidationView res] [
-                divAttr [attr.``class`` "tooltip"] [
-                    divAttr [attr.``class`` "errorIcon"] []
-                    spanAttr 
-                        [attr.``class`` "tooltiptext"] 
-                        [Doc.BindView validationMessage res]
-                ]
-            ]
-            |> validationLayout doc
-
-        let validationViewIcon res doc =
-            divAttr [attr.classDyn <| toggleValidationView res] [
-                divAttr [attr.``class`` "errorIcon"] []
-            ]
-            |> validationLayout doc
 
         let wrapIcon f v ls = 
             Layout.OfList ls 
@@ -465,9 +459,6 @@ module Formlet =
                     })
 
     module V = ValidationView
-
-    let WithValidationIconOnly (flX : Formlet<'T>) =
-        V.withValidation V.validationViewIcon flX
 
     let WithValidationIcon (flX : Formlet<'T>) =
         V.withValidation V.validationViewWithTooltip flX
