@@ -414,29 +414,51 @@ module Formlet =
                 let m = msg |> List.fold (fun a s -> a + "\n" + s) ""
                 text m
 
-        let toggleValidationView (v : View<Result<_>>) = 
+        let inline respondResult (v : View<Result<_>>) (s, f) = 
             View.Map (
                 function 
-                | Success _ -> "hidden"
-                | Failure _ -> "visible"
+                | Success _ -> s
+                | Failure _ -> f
             ) v
 
-        let validationViewWithTooltip res doc = 
+        let toggleHidden (v : View<Result<_>>) = 
+            respondResult v ("hidden", "visible")
+
+        let toggleError (v : View<Result<_>>) = 
+            respondResult v ("", "errorFormlet")
+
+        let validationTooltipView res doc = 
             table [ 
                 tr [
                     tdAttr [attr.``class`` "tooltip"] [
                         doc
-                        divAttr [attr.classDyn <| toggleValidationView res] [
+                        divAttr [attr.classDyn <| toggleHidden res] [
                            spanAttr 
                                 [attr.``class`` "tooltiptext"] 
                                 [Doc.BindView validationMessage res]
                         ]
                     ]
                     td [
-                        divAttr [attr.classDyn <| toggleValidationView res] [
+                        divAttr [attr.classDyn <| toggleHidden res] [
                             divAttr [attr.``class`` "errorIcon"] []
                         ]
                     ]
+                ]
+            ] :> Doc
+
+        let validationMessageView res doc = 
+            table [ 
+                tr [
+                    tdAttr [attr.classDyn <| toggleError res] [
+                        doc
+                    ]
+                    td []
+                ]
+                trAttr [attr.classDyn <| toggleHidden res] [
+                    tdAttr [attr.``class`` "errorPanel"] [
+                        Doc.BindView validationMessage res
+                    ]
+                    td []
                 ]
             ] :> Doc
 
@@ -461,7 +483,10 @@ module Formlet =
     module V = ValidationView
 
     let WithValidationIcon (flX : Formlet<'T>) =
-        V.withValidation V.validationViewWithTooltip flX
+        V.withValidation V.validationTooltipView flX
+
+    let WithValidationMessage (flX : Formlet<'T>) =
+        V.withValidation V.validationMessageView flX
 
 [<AutoOpen; JavaScript>]
 module Pervasives =
