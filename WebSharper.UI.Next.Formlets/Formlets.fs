@@ -471,14 +471,28 @@ module Formlet =
             |> fun x -> [x]
 
         let withValidation f (flX : Formlet<'T>) =
-            flX
-            |> fun flx -> 
-                Formlet (fun () ->
-                    let flx = flx.Data ()
-                    {
-                        View = flx.View
-                        Layout = wrapIcon f flx.View flx.Layout 
-                    })
+            let flx = flX.Data ()
+            Formlet (fun () ->
+                {
+                    View = flx.View
+                    Layout = wrapIcon f flx.View flx.Layout 
+                })
+
+        let addTrigger l (sb : Submitter<_>) (x : Doc) = 
+            match x with 
+            | :? Elt as e ->
+                let itm = Item (DocExtensions.OnChange 
+                            (e, (fun _ _ -> sb.Trigger ())))
+                [{l with Shape = itm}]
+            | _ -> [l]
+
+        let addSubmitter sb flx =
+            match flx.Layout with 
+            | [l] -> 
+                match l.Shape with
+                | Item x -> addTrigger l sb x
+                | _ -> [l] 
+            | l -> l
 
     module V = ValidationView
 
@@ -487,6 +501,17 @@ module Formlet =
 
     let WithValidationMessage (flX : Formlet<'T>) =
         V.withValidation V.validationMessageView flX
+
+    let ValidateOnChange init (flX : Formlet<'T>)  =
+        let flx = flX.Data()
+        let sb = Submitter.Create flx.View (Success init)
+        Formlet (fun () ->
+            {
+                View = sb.View
+                Layout = V.addSubmitter sb flx
+            }
+        )
+
 
 [<AutoOpen; JavaScript>]
 module Pervasives =
