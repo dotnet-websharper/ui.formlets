@@ -293,7 +293,7 @@ module Formlet =
             {
                 View =
                     v.Bind(
-                        Array.MapReduce
+                        Array.MapTreeReduce
                             (fun fl -> fl.View.Map (Result.Map Seq.singleton))
                             (View.Const (Result.Success Seq.empty))
                             (View.Map2 Result.Append))
@@ -306,7 +306,7 @@ module Formlet =
                             ] [])
                         Layout.Varying (
                             v.Map (
-                                Array.MapReduce
+                                Array.MapTreeReduce
                                     (fun fl -> fl.Layout)
                                     List.empty
                                     (fun x y -> y @ x)))
@@ -333,7 +333,7 @@ module Formlet =
             {
                 View =
                     v.Bind(
-                        Array.MapReduce
+                        Array.MapTreeReduce
                             (fun fl -> fl.View.Map (Result.Map Seq.singleton))
                             (View.Const (Result.Success Seq.empty))
                             (View.Map2 Result.Append))
@@ -347,7 +347,7 @@ module Formlet =
                             |> Doc.Append (Doc.EmbedView cb))
                         Layout.Varying (
                             v.Map (
-                                Array.MapReduce
+                                Array.MapTreeReduce
                                     (fun fl -> fl.Layout)
                                     List.empty
                                     (fun x y -> y @ x)))
