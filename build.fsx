@@ -13,7 +13,7 @@ let main =
         .SourcesFromProject()
         .References(fun r ->
             [
-                r.NuGet("WebSharper.UI.Next").ForceFoundVersion().Reference()
+                r.NuGet("WebSharper.UI.Next").Version("(,4.0)").ForceFoundVersion().Reference()
             ])
         .Embed(
             [
@@ -30,7 +30,7 @@ let test =
         .SourcesFromProject()
         .References(fun r ->
             [
-                r.NuGet("WebSharper.UI.Next").Reference()
+                r.NuGet("WebSharper.UI.Next").Version("(,4.0)").Reference()
                 r.Project(main)
             ])
 
