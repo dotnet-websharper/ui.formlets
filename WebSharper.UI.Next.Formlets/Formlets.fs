@@ -288,7 +288,7 @@ module Formlet =
             let m = ListModel.Create fst []
             let v =
                 m.View
-                |> View.ConvertBy m.Key snd
+                |> View.MapSeqCachedBy m.Key snd
                 |> View.Map Array.ofSeq
             {
                 View =
@@ -404,6 +404,115 @@ module Formlet =
 
     let Do = Builder()
 
+    module private ValidationView = 
+
+        open WebSharper.UI.Next.Html
+
+        let validationMessage = function 
+            | Success _ -> Doc.Empty
+            | Failure msg -> 
+                let m = msg |> List.fold (fun a s -> a + "\n" + s) ""
+                text m
+
+        let inline respondResult (v : View<Result<_>>) (s, f) = 
+            View.Map (
+                function 
+                | Success _ -> s
+                | Failure _ -> f
+            ) v
+
+        let toggleHidden (v : View<Result<_>>) = 
+            respondResult v ("hidden", "visible")
+
+        let toggleError (v : View<Result<_>>) = 
+            respondResult v ("", "errorFormlet")
+
+        let validationTooltipView res doc = 
+            table [ 
+                tr [
+                    tdAttr [attr.``class`` "tooltip"] [
+                        doc
+                        divAttr [attr.classDyn <| toggleHidden res] [
+                           spanAttr 
+                                [attr.``class`` "tooltiptext"] 
+                                [Doc.BindView validationMessage res]
+                        ]
+                    ]
+                    td [
+                        divAttr [attr.classDyn <| toggleHidden res] [
+                            divAttr [attr.``class`` "errorIcon"] []
+                        ]
+                    ]
+                ]
+            ] :> Doc
+
+        let validationMessageView res doc = 
+            table [ 
+                tr [
+                    tdAttr [attr.classDyn <| toggleError res] [
+                        doc
+                    ]
+                    td []
+                ]
+                trAttr [attr.classDyn <| toggleHidden res] [
+                    tdAttr [attr.``class`` "errorPanel"] [
+                        Doc.BindView validationMessage res
+                    ]
+                    td []
+                ]
+            ] :> Doc
+
+        let wrapIcon f v ls = 
+            Layout.OfList ls 
+            |> fun l -> 
+                match l.Shape with
+                | Item x -> {l with Shape = Item (f v x)}
+                | _ -> l |> Layout.Wrap (f v)
+            |> fun x -> [x]
+
+        let withValidation f (flX : Formlet<'T>) =
+            let flx = flX.Data ()
+            Formlet (fun () ->
+                {
+                    View = flx.View
+                    Layout = wrapIcon f flx.View flx.Layout 
+                })
+
+        let addTrigger l (sb : Submitter<_>) (x : Doc) = 
+            match x with 
+            | :? Elt as e ->
+                let itm = Item (DocExtensions.OnChange 
+                            (e, (fun _ _ -> sb.Trigger ())))
+                [{l with Shape = itm}]
+            | _ -> [l]
+
+        let addSubmitter sb flx =
+            match flx.Layout with 
+            | [l] -> 
+                match l.Shape with
+                | Item x -> addTrigger l sb x
+                | _ -> [l] 
+            | l -> l
+
+    module V = ValidationView
+
+    let WithValidationIcon (flX : Formlet<'T>) =
+        V.withValidation V.validationTooltipView flX
+
+    let WithValidationMessage (flX : Formlet<'T>) =
+        V.withValidation V.validationMessageView flX
+
+    let ValidateOnChange init (flX : Formlet<'T>)  =
+        let flx = flX.Data()
+        let sb = Submitter.Create flx.View (Success init)
+        Formlet (fun () ->
+            {
+                View = sb.View
+                Layout = V.addSubmitter sb flx
+            }
+        )
+
+
 [<AutoOpen; JavaScript>]
 module Pervasives =
 
@@ -507,3 +616,4 @@ module Validation =
     let IsMatch regex msg flX =
         let re = RegExp(regex)
         Is re.Test msg flX
+
