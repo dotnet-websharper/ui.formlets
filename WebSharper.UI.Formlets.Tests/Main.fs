@@ -1,14 +1,14 @@
-namespace WebSharper.UI.Next.Formlets.Tests
+namespace WebSharper.UI.Formlets.Tests
 
 open WebSharper
-open WebSharper.UI.Next
-open WebSharper.UI.Next.Html
+open WebSharper.UI
+open WebSharper.UI.Html
 
 [<JavaScript>]
 module Client =
     open WebSharper.JavaScript
-    open WebSharper.UI.Next.Client
-    open WebSharper.UI.Next.Formlets
+    open WebSharper.UI.Client
+    open WebSharper.UI.Formlets
 
     type Country =
         | [<Constant "HU">] HU
@@ -66,7 +66,7 @@ module Client =
                 res
                 |> Seq.map (fun (b, c, d) ->
                     Console.Log d
-                    p [text (sprintf "%s %b %s" b c (Country.ToString d))]
+                    p [] [text (sprintf "%s %b %s" b c (Country.ToString d))]
                     :> Doc)
                 |> Doc.Concat)
         }
@@ -76,7 +76,7 @@ module Client =
 
 module Server =
     open WebSharper.Sitelets
-    open WebSharper.UI.Next.Server
+    open WebSharper.UI.Server
 
     [<Literal>]
     let TemplatePath = __SOURCE_DIRECTORY__ + "/index.html"

@@ -3,18 +3,18 @@
 open IntelliFactory.Build
 
 let bt =
-    BuildTool().PackageId("WebSharper.UI.Next.Formlets")
+    BuildTool().PackageId("WebSharper.UI.Formlets")
         .VersionFrom("WebSharper", "alpha")
         .WithFSharpVersion(FSharpVersion.FSharp30)
         .WithFramework(fun fw -> fw.Net40)
 
 let main =
-    bt.WebSharper4.Library("WebSharper.UI.Next.Formlets")
+    bt.WebSharper4.Library("WebSharper.UI.Formlets")
         .SourcesFromProject()
         .WithSourceMap()
         .References(fun r ->
             [
-                r.NuGet("WebSharper.UI.Next").Latest(true).ForceFoundVersion().Reference()
+                r.NuGet("WebSharper.UI").Latest(true).ForceFoundVersion().Reference()
             ])
         .Embed(
             [
@@ -27,12 +27,12 @@ let main =
             ])
 
 let test =
-    bt.WebSharper4.SiteletWebsite("WebSharper.UI.Next.Formlets.Tests")
+    bt.WebSharper4.SiteletWebsite("WebSharper.UI.Formlets.Tests")
         .SourcesFromProject()
         .WithSourceMap()
         .References(fun r ->
             [
-                r.NuGet("WebSharper.UI.Next").Latest(true).ForceFoundVersion().Reference()
+                r.NuGet("WebSharper.UI").Latest(true).ForceFoundVersion().Reference()
                 r.Project(main)
             ])
 
@@ -43,13 +43,13 @@ bt.Solution [
 
     bt.NuGet.CreatePackage()
         .Description("Provides a framework to build reactive forms in WebSharper.")
-        .ProjectUrl("http://github.com/intellifactory/websharper.ui.next.formlets")
+        .ProjectUrl("http://github.com/dotnet-websharper/ui.formlets")
         .Configure(fun c ->
             {
                 c with
                     Authors = ["IntelliFactory"]
-                    Title = Some "WebSharper.UI.Next.Formlets"
-                    LicenseUrl = Some "http://github.com/intellifactory/websharper.ui.next.formlets/blob/master/LICENSE.md"
+                    Title = Some "WebSharper.UI.Formlets"
+                    LicenseUrl = Some "http://github.com/dotnet-websharper/ui.formlets/blob/master/LICENSE.md"
                     RequiresLicenseAcceptance = true
             })
         .Add(main)

@@ -1,12 +1,12 @@
-namespace WebSharper.UI.Next.Formlets
+namespace WebSharper.UI.Formlets
 
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open WebSharper
 open WebSharper.JavaScript
-open WebSharper.UI.Next
-open WebSharper.UI.Next.Client
-open WebSharper.UI.Next.Notation
+open WebSharper.UI
+open WebSharper.UI.Client
+open WebSharper.UI.Notation
 
 [<JavaScript>]
 type LayoutShape =
@@ -288,7 +288,7 @@ module Formlet =
             let m = ListModel.Create fst []
             let v =
                 m.View
-                |> View.ConvertBy m.Key snd
+                |> View.MapSeqCachedBy m.Key snd
                 |> View.Map Array.ofSeq
             {
                 View =
