@@ -313,7 +313,7 @@ module Formlet =
                     ]
             })
 
-    let ManyWithModel (m: ListModel<'K, 'T>) (insertInit: unit -> 'T) (f: IRef<'T> -> Formlet<'U>) =
+    let ManyWithModel (m: ListModel<'K, 'T>) (insertInit: unit -> 'T) (f: Var<'T> -> Formlet<'U>) =
         Formlet (fun () ->
             let mf = ListModel.Create fst []
             m.Iter(fun x ->
@@ -419,7 +419,7 @@ module Pervasives =
 [<JavaScript>]
 module Controls =
 
-    let private Input' (var: unit -> IRef<'T>) (layout: IRef<'T> -> #Doc) : Formlet<'T> =
+    let private Input' (var: unit -> Var<'T>) (layout: Var<'T> -> #Doc) : Formlet<'T> =
         Formlet (fun () ->
             let var = var()
             {
@@ -474,7 +474,7 @@ module Controls =
     let Select init items = Select' (InputInit' init) items
 
     // Radio ('T)
-    let private Radio' (var: unit -> IRef<'T>) (items: list<'T * string>) =
+    let private Radio' (var: unit -> Var<'T>) (items: list<'T * string>) =
         Formlet (fun () ->
             let var = var()
             {
