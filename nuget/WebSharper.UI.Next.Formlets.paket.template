@@ -1,0 +1,18 @@
+type file
+id WebSharper.UI.Next.Formlets
+authors
+    IntelliFactory
+owners
+    IntelliFactory
+licenseUrl http://github.com/intellifactory/websharper.ui.next.formlets/blob/master/LICENSE.md
+projectUrl http://github.com/intellifactory/websharper.ui.next.formlets
+description
+    Provides a framework to build reactive forms in WebSharper.
+tags
+    Web JavaScript F# C#
+files
+    ../WebSharper.UI.Next.Formlets/bin/Release/net45/WebSharper.UI.Next.Formlets.dll ==> lib/net45
+    ../WebSharper.UI.Next.Formlets/bin/Release/net45/WebSharper.UI.Next.Formlets.xml ==> lib/net45
+dependencies
+        WebSharper >= LOCKEDVERSION
+        WebSharper.UI.Next >= LOCKEDVERSION

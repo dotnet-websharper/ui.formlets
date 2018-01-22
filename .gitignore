@@ -9,3 +9,9 @@ build/
 *.Tests/Scripts/
 **/bin/
 **/obj/
+
+bin/
+obj/
+/.fake/
+/paket-files/
+/.vscode/
