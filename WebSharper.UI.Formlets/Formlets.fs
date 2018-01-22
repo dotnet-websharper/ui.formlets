@@ -295,7 +295,7 @@ module Formlet =
                     v.Bind(
                         Array.MapTreeReduce
                             (fun fl -> fl.View.Map (Result.Map Seq.singleton))
-                            (View.Const (Result.Success Seq.empty))
+                            (View.Const (Result<_>.Success Seq.empty))
                             (View.Map2 Result.Append))
                 Layout =
                     [
@@ -335,7 +335,7 @@ module Formlet =
                     v.Bind(
                         Array.MapTreeReduce
                             (fun fl -> fl.View.Map (Result.Map Seq.singleton))
-                            (View.Const (Result.Success Seq.empty))
+                            (View.Const (Result<_>.Success Seq.empty))
                             (View.Map2 Result.Append))
                 Layout =
                     [

@@ -1,56 +1,17 @@
-#load "tools/includes.fsx"
+#load "paket-files/build/intellifactory/websharper/tools/WebSharper.Fake.fsx"
+open Fake
+open WebSharper.Fake
 
-open IntelliFactory.Build
+let targets =
+    GetSemVerOf "WebSharper"
+    |> ComputeVersion
+    |> WSTargets.Default
+    |> MakeTargets
 
-let bt =
-    BuildTool().PackageId("WebSharper.UI.Next.Formlets")
-        .VersionFrom("WebSharper", "alpha")
-        .WithFSharpVersion(FSharpVersion.FSharp30)
-        .WithFramework(fun fw -> fw.Net40)
+Target "Build" DoNothing
+targets.BuildDebug ==> "Build"
 
-let main =
-    bt.WebSharper.Library("WebSharper.UI.Next.Formlets")
-        .SourcesFromProject()
-        .References(fun r ->
-            [
-                r.NuGet("WebSharper.UI.Next").Version("(,4.0)").ForceFoundVersion().Reference()
-            ])
-        .Embed(
-            [
-                "styles/Formlet.css"
-                "images/ActionAdd.png"
-                "images/ActionCheck.png"
-                "images/ActionDelete.png"
-                "images/ErrorIcon.png"
-                "images/InfoIcon.png"
-            ])
+Target "CI-Release" DoNothing
+targets.CommitPublish ==> "CI-Release"
 
-let test =
-    bt.WebSharper.SiteletWebsite("WebSharper.UI.Next.Formlets.Tests")
-        .SourcesFromProject()
-        .References(fun r ->
-            [
-                r.NuGet("WebSharper.UI.Next").Version("(,4.0)").Reference()
-                r.Project(main)
-            ])
-
-bt.Solution [
-
-    main
-    test
-
-    bt.NuGet.CreatePackage()
-        .Description("Provides a framework to build reactive forms in WebSharper.")
-        .ProjectUrl("http://github.com/intellifactory/websharper.ui.next.formlets")
-        .Configure(fun c ->
-            {
-                c with
-                    Authors = ["IntelliFactory"]
-                    Title = Some "WebSharper.UI.Next.Formlets"
-                    LicenseUrl = Some "http://github.com/intellifactory/websharper.ui.next.formlets/blob/master/LICENSE.md"
-                    RequiresLicenseAcceptance = true
-            })
-        .Add(main)
-
-]
-|> bt.Dispatch
+RunTargetOrDefault "Build"

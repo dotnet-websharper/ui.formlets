@@ -22,6 +22,7 @@ module Client =
         <*> flX
         <*> flY
 
+    [<SPAEntryPoint>]
     let Main() =
         Console.Log("Running JavaScript Entry Point..")
         let lm =
@@ -73,20 +74,4 @@ module Client =
         |> Formlet.WithFormContainer
         |> Formlet.RunWithLayout Layout.Table (fun x ->
             JS.Window?foo <- x)
-
-module Server =
-    open WebSharper.Sitelets
-    open WebSharper.UI.Server
-
-    [<Literal>]
-    let TemplatePath = __SOURCE_DIRECTORY__ + "/index.html"
-
-    type Template = Templating.Template<TemplatePath>
-
-    [<Website>]
-    let Website =
-        Application.SinglePage (fun ctx ->
-            Content.Doc(
-                Template.Doc(main = [client <@ Client.Main() @>])
-            )
-        )
+        |> Doc.RunById "main"
